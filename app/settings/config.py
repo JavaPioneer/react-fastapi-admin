@@ -116,8 +116,8 @@ class Settings(BaseSettings):
     REDIS_HOST: str = Field(default="127.0.0.1", description="Redis 主机")
     REDIS_PORT: int = Field(default=63790, description="Redis 端口")
     REDIS_DB: int = Field(default=5, description="Redis 数据库索引")
-    REDIS_PASSWORD: str = Field(default="infini_rag_flow_ZSRZ1!$", description="Redis 密码")
-    REDIS_PREFIX: str = Field(default="financial:", description="Redis 前缀")
+    REDIS_PASSWORD: str = Field(default="123456", description="Redis 密码")
+    REDIS_PREFIX: str = Field(default="react-fastapi:", description="Redis 前缀")
 
     # Date and time formatting.
     DATETIME_FORMAT: str = Field(default="%Y-%m-%d %H:%M:%S", description="日期时间格式")
