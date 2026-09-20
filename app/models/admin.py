@@ -17,10 +17,10 @@ class User(BaseModel, TimestampMixin):
     last_login = fields.DatetimeField(null=True, description="最后登录时间", db_index=True)
     session_version = fields.IntField(default=0, description="会话版本", db_index=True)
     refresh_token_jti = fields.CharField(max_length=32, null=True, description="当前刷新令牌标识", db_index=True)
-    roles = fields.ManyToManyField("models.Role", related_name="user_roles")
+    roles = fields.ManyToManyField("models.Role", related_name="user_roles", through="sys_user_role")
 
     class Meta:
-        table = "user"
+        table = "sys_user"
 
 
 class Role(BaseModel, TimestampMixin):
@@ -30,7 +30,7 @@ class Role(BaseModel, TimestampMixin):
     api_ids = fields.JSONField(default=list, description="API权限ID列表")
 
     class Meta:
-        table = "role"
+        table = "sys_role"
 
 
 class Api(BaseModel, TimestampMixin):
@@ -40,7 +40,7 @@ class Api(BaseModel, TimestampMixin):
     tags = fields.CharField(max_length=100, description="API标签", db_index=True)
 
     class Meta:
-        table = "api"
+        table = "sys_api"
 
 
 class RateLimitBucket(BaseModel, TimestampMixin):
@@ -49,7 +49,7 @@ class RateLimitBucket(BaseModel, TimestampMixin):
     expires_at = fields.BigIntField(description="过期时间戳", db_index=True)
 
     class Meta:
-        table = "rate_limit_bucket"
+        table = "sys_rate_limit_bucket"
 
 
 class AuditLog(BaseModel, TimestampMixin):
@@ -70,7 +70,7 @@ class AuditLog(BaseModel, TimestampMixin):
     is_deleted = fields.BooleanField(default=False, description="是否已删除", db_index=True)
 
     class Meta:
-        table = "audit_log"
+        table = "sys_audit_log"
         indexes = [
             # Create compound indexes to improve query performance.
             ("created_at", "username"),
