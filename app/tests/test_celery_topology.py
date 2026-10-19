@@ -20,6 +20,8 @@ class TestQueueTopology:
         assert settings.celery_queues == ["default"]
         assert settings.celery_queues[0] == "default"
 
-    def test_config_registry_empty_by_default(self) -> None:
-        assert celery_app.conf.task_routes == {}
-        assert celery_app.conf.beat_schedule == {}
+    def test_cleanup_task_registered(self) -> None:
+        assert celery_app.conf.task_routes == {"app.tasks.cleanup_tasks.*": {"queue": "default"}}
+        schedule_tasks = {entry["task"] for entry in celery_app.conf.beat_schedule.values()}
+        assert "app.tasks.cleanup_tasks.cleanup_tmp_objects" in schedule_tasks
+        assert "app.tasks.cleanup_tasks.cleanup_tmp_objects" in celery_app.tasks

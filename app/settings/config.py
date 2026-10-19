@@ -132,6 +132,21 @@ class Settings(BaseSettings):
     # 启用的 Celery 队列列表（逗号分隔，default 兜底）
     CELERY_QUEUES: str = Field(default="default", description="启用的 Celery 队列列表（逗号分隔）")
 
+    # MinIO 对象存储配置
+    MINIO_ENABLED: bool = Field(default=False, description="是否启用 MinIO 对象存储")
+    MINIO_ENDPOINT: str = Field(default="localhost:9000", description="MinIO 主机")
+    MINIO_ACCESS_KEY: str = Field(default="minio", description="MinIO 访问密钥")
+    MINIO_SECRET_KEY: str = Field(default="minio123", description="MinIO 访问密钥")
+    MINIO_BUCKET_NAME: str = Field(default="app", description="MinIO 默认存储桶名称")
+    MINIO_BUCKET_TMP: str = Field(default="app-tmp", description="MinIO 临时对象桶（按保留期回收）")
+    MINIO_SECURE: bool = Field(default=False, description="MinIO 是否使用 HTTPS")
+    MINIO_URL_EXPIRES: int = Field(default=300, description="预签名 URL 有效期（秒）")
+    MINIO_CONNECTION_TIMEOUT: float = Field(
+        default=5.0, description="MinIO 客户端连接超时（秒；不可达时快速失败，防长挂后裸 500）"
+    )
+    # app-tmp 临时对象保留期（小时），超期由回收任务删除
+    TMP_RETAIN_HOURS: int = Field(default=48, description="临时对象保留期（小时），超期由回收任务删除")
+
     @field_validator(
         "APP_ENV",
         "SERVER_RELOAD",
@@ -376,6 +391,25 @@ class Settings(BaseSettings):
         if "default" not in queues:
             queues.insert(0, "default")
         return queues
+
+    @property
+    def common_redis_config(self) -> dict:
+        """
+        通用 Redis 客户端配置（app/utils/redis_utils.py::get_common_redis_client 默认参数求值用）
+
+        Author  ：bixuejun(bxjgood@163.com)
+        Date    ：2026-09-26 00:30:44  # 北京时间 UTC+8
+
+        Returns:
+            dict: CustomRedisClient 构造配置（host/port/db/password/prefix）
+        """
+        return {
+            "host": self.REDIS_HOST,
+            "port": self.REDIS_PORT,
+            "db": self.REDIS_DB,
+            "password": self.REDIS_PASSWORD,
+            "prefix": self.REDIS_PREFIX,
+        }
 
     def get_database_url(self) -> str:
         """Return the database connection URL."""

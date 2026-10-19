@@ -16,6 +16,7 @@ from app.repositories.api_repository import ApiRepository
 from app.services import system_setting_service
 from app.settings import settings
 from app.utils.log_control import init_logging, logger
+from app.utils.minio_utils import StorageUnavailableError, get_storage
 
 
 mimetypes.add_type("image/webp", ".webp")
@@ -58,6 +59,14 @@ async def lifespan(app: FastAPI):
         async with app.state.db_runtime.activate():
             await system_setting_service.initialize_runtime_settings(app=app)
             logger.info("Runtime settings initialized")
+            if settings.MINIO_ENABLED:
+                try:
+                    await get_storage().ensure_buckets()
+                    logger.info("MinIO buckets ensured")
+                except StorageUnavailableError as exc:
+                    # MinIO 不可达时降级启动：用时再验由各存储操作的 503 STORAGE_UNAVAILABLE
+                    # 转译覆盖，避免断连期服务整体不可用
+                    logger.warning(f"MinIO buckets ensure failed, starting in degraded mode: {exc}")
         # 开发环境便利开关：随进程内嵌启动 Celery worker 与 beat（生产环境应使用独立容器，保持关闭）
         if settings.CELERY_AUTOSTART:
             atexit.register(_stop_embedded_celery)
