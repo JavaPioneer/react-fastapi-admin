@@ -105,8 +105,13 @@ _worker_process = None
 _beat_thread = None
 _beat_process = None
 _beat_lock_acquired = False
-_beat_lock_path = os.path.join(tempfile.gettempdir(), "celery_beat.lock")
-_beat_schedule_path = os.path.join(tempfile.gettempdir(), "celery-beat-schedule")
+# 锁/调度文件名带项目前缀：脚手架派生的多个项目同机并发内嵌启动 beat 时互不互抢
+_beat_lock_path = os.path.join(
+    tempfile.gettempdir(), f"{settings.PROJECT_NAME.lower().replace(' ', '-')}_celery_beat.lock"
+)
+_beat_schedule_path = os.path.join(
+    tempfile.gettempdir(), f"{settings.PROJECT_NAME.lower().replace(' ', '-')}-celery-beat-schedule"
+)
 
 
 def _is_process_alive(pid: int) -> bool:

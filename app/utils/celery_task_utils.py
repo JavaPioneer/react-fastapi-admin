@@ -12,7 +12,11 @@ Date: 2026-01-29 15:03:08
 import asyncio
 from typing import Any, Coroutine
 
+from tortoise import Tortoise
+
+from app.settings.config import settings
 from app.utils.log_control import logger
+from app.utils.redis_utils import _common_redis_client
 
 
 async def _cleanup_redis_connections():
@@ -28,7 +32,6 @@ async def _cleanup_redis_connections():
     """
     # 清理全局 Redis 客户端单例
     try:
-        from app.utils.redis_utils import _common_redis_client
         if _common_redis_client is not None:
             await _common_redis_client.close()
             logger.debug("全局 Common Redis 客户端已关闭")
@@ -75,17 +78,12 @@ def run_async_task(coro: Coroutine) -> Any:
         >>>     # 执行异步操作
         >>>     pass
     """
-    from app.settings.config import settings
-
     async def run_with_db():
         """
         执行协程并管理数据库连接
 
         为当前任务初始化独立的数据库连接
         """
-        from tortoise import Tortoise
-
-        # 为当前任务初始化独立的数据库连接
         await Tortoise.init(
             config=settings.tortoise_orm,
             _create_db=False  # 不创建数据库，只连接

@@ -25,3 +25,15 @@ class TestQueueTopology:
         schedule_tasks = {entry["task"] for entry in celery_app.conf.beat_schedule.values()}
         assert "app.tasks.cleanup_tasks.cleanup_tmp_objects" in schedule_tasks
         assert "app.tasks.cleanup_tasks.cleanup_tmp_objects" in celery_app.tasks
+
+    def test_beat_lock_names_include_project_prefix(self) -> None:
+        """beat 锁/调度文件名带项目前缀，避免多项目同机互抢。"""
+        # app.celery.__init__ 再导出的 celery_app 实例会遮蔽同名子模块属性，须走 importlib 取真实模块
+        import importlib
+
+        celery_module = importlib.import_module("app.celery.celery_app")
+
+        prefix = settings.PROJECT_NAME.lower().replace(" ", "-")
+        assert celery_module._beat_lock_path.endswith("celery_beat.lock")
+        assert prefix in celery_module._beat_lock_path.replace("\\", "/").split("/")[-1]
+        assert prefix in celery_module._beat_schedule_path.replace("\\", "/").split("/")[-1]

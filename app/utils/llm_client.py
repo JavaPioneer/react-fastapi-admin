@@ -312,9 +312,9 @@ class LLMClient:
                 if attempt == self.max_retries - 1:
                     return LLMResponse(success=False, error=str(e))
 
-            # 重试前等待
+            # 重试前等待（同步路径用 time.sleep 真实阻塞；源处 asyncio.sleep 未 await 属潜伏 bug）
             if attempt < self.max_retries - 1:
-                asyncio.sleep(self.retry_delay * (attempt + 1))
+                time.sleep(self.retry_delay * (attempt + 1))
 
         return LLMResponse(success=False, error="达到最大重试次数")
 

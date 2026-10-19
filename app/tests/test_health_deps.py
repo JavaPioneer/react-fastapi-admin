@@ -7,6 +7,8 @@ Author: bixuejun(bxjgood@163.com)
 Date: 2026-09-26 09:40:00  # 北京时间 UTC+8
 """
 
+import asyncio
+from contextlib import ExitStack
 from unittest.mock import patch
 
 from fastapi import FastAPI
@@ -66,8 +68,6 @@ class TestHealthDeps:
             redis_probe = stack.enter_context(patch.object(health_service, "check_redis"))
             stack.enter_context(patch.object(health_service.settings, "REDIS_ENABLED", False))
             stack.enter_context(patch.object(health_service.settings, "MINIO_ENABLED", False))
-            import asyncio
-
             deps = asyncio.run(health_service.collect_deps_health())
         redis_probe.assert_not_called()
         assert deps == {"db": "ok", "redis": "skip", "minio": "skip"}

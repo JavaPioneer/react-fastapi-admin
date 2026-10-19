@@ -11,6 +11,7 @@ Author: bixuejun(bxjgood@163.com)
 Date: 2026-10-19 21:10:33  # 北京时间 UTC+8
 """
 
+import asyncio
 from contextlib import asynccontextmanager
 from unittest.mock import MagicMock, patch
 
@@ -34,7 +35,6 @@ class TestTransactionConnectionBinding:
             patch("app.core.transactions.in_transaction", side_effect=lambda **kw: fake_in_transaction(**kw)),
             patch("app.core.transactions.Tortoise", tortoise_stub),
         ):
-            import asyncio
 
             async def run() -> None:
                 async with managed_transaction():
@@ -53,7 +53,6 @@ class TestTransactionConnectionBinding:
             patch("app.core.transactions.in_transaction") as in_tx_mock,
             patch("app.core.transactions.Tortoise", tortoise_stub),
         ):
-            import asyncio
 
             async def run() -> None:
                 async with managed_transaction():

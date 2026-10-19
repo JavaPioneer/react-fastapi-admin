@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import hashlib
+import os
 import io
 import re
 from datetime import timedelta
@@ -479,7 +480,6 @@ class MinioClient:
         Returns:
             tuple[bool, str]: 第一个是布尔值表示是否成功，第二个是字符串表示本地文件路径或错误信息
         """
-        import os
 
         bucket = bucket_name or self.bucket_name
 

@@ -63,3 +63,46 @@ class TestBuildPayloadThinking:
             payload = _client()._build_payload(_messages(), model="m")
         assert payload["thinking"] == {"type": "enabled"}
         assert payload["chat_template_kwargs"] == {"thinking": True}
+
+
+class TestSyncRetryBackoff:
+    def test_sync_chat_retries_back_off_via_time_sleep(self) -> None:
+        """同步 chat 重试间隔必须真实阻塞（time.sleep），而非未 await 的协程。"""
+        from unittest.mock import MagicMock
+
+        good = MagicMock()
+        good.raise_for_status.return_value = None
+        good.json.return_value = {"choices": [{"message": {"content": "ok"}}], "model": "m", "usage": {}}
+        good.text = ""
+
+        attempts = {"n": 0}
+
+        class _FlakyClient:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+            def post(self, *args, **kwargs):
+                attempts["n"] += 1
+                if attempts["n"] == 1:
+                    raise RuntimeError("transient (test)")
+                return good
+
+        client = LLMClient(api_key="k", base_url="http://x", default_model="m")
+        client.max_retries = 3
+
+        with (
+            patch("app.utils.llm_client.settings", _fake_settings("qwen", False)),
+            patch("app.utils.llm_client.httpx.Client", _FlakyClient),
+            patch("app.utils.llm_client.time.sleep") as sleep_mock,
+        ):
+            response = client.chat(_messages())
+
+        assert response.success is True
+        assert attempts["n"] == 2
+        sleep_mock.assert_called_once()  # 第一次失败后真实退避一次
