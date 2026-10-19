@@ -124,6 +124,14 @@ class Settings(BaseSettings):
     # Date and time formatting.
     DATETIME_FORMAT: str = Field(default="%Y-%m-%d %H:%M:%S", description="日期时间格式")
 
+    # Celery 配置
+    # 是否随后端进程内嵌启动 Celery worker 与 beat（开发环境便利开关，默认关闭；生产环境应使用独立容器，保持 false）
+    CELERY_AUTOSTART: bool = Field(default=False, description="是否随后端进程内嵌启动 Celery worker 与 beat")
+    # Celery worker 并发数（Linux/prefork 池下生效；Windows solo 池为单执行槽，该值不生效）
+    CELERY_WORKER_CONCURRENCY: int = Field(default=4, description="Celery worker 并发数")
+    # 启用的 Celery 队列列表（逗号分隔，default 兜底）
+    CELERY_QUEUES: str = Field(default="default", description="启用的 Celery 队列列表（逗号分隔）")
+
     @field_validator(
         "APP_ENV",
         "SERVER_RELOAD",
@@ -360,6 +368,14 @@ class Settings(BaseSettings):
         # Ensure the log directory exists. This is required.
         self.logs_path.mkdir(parents=True, exist_ok=True)
         # Note: the storage directory is created only when it is actually needed, not during startup.
+
+    @property
+    def celery_queues(self) -> List[str]:
+        """解析 CELERY_QUEUES 逗号分隔配置为有序去重队列名列表（含 default 兜底）。"""
+        queues = list(dict.fromkeys(q.strip() for q in self.CELERY_QUEUES.split(",") if q.strip()))
+        if "default" not in queues:
+            queues.insert(0, "default")
+        return queues
 
     def get_database_url(self) -> str:
         """Return the database connection URL."""
