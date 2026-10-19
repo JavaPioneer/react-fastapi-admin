@@ -2,7 +2,7 @@ from tortoise import fields
 from tortoise.queryset import Q
 
 from .base import BaseModel, TimestampMixin
-from .enums import MethodType
+from .enums import DataScope, MethodType
 
 
 class User(BaseModel, TimestampMixin):
@@ -28,6 +28,11 @@ class Role(BaseModel, TimestampMixin):
     desc = fields.CharField(max_length=500, null=True, description="角色描述")
     menu_paths = fields.JSONField(default=list, description="菜单权限路径")
     api_ids = fields.JSONField(default=list, description="API权限ID列表")
+    # 数据范围（一期仅 SELF/ALL 生效，DEPARTMENT/ORG 登记预留）
+    # 注：default 必须用 .value 字符串——tortoise/aerich DDL 生成器不支持枚举默认值
+    data_scope = fields.CharField(
+        max_length=16, default=DataScope.SELF.value, description="数据范围（SELF/ALL 一期生效）"
+    )
 
     class Meta:
         table = "sys_role"
