@@ -110,6 +110,8 @@ class Settings(BaseSettings):
     DB_USERNAME: str = Field(default="root", description="数据库用户名")
     DB_PASSWORD: str = Field(default="", description="数据库密码")
     DB_DATABASE: str = Field(default="fastapi_admin", description="数据库名称")
+    DB_DATABASE_SCHEMA: str = Field(default="public", description="数据库模式名")
+    DB_CHARSET: str = Field(default="utf8mb4", description="数据库字符集")
 
     # Redis 配置
     REDIS_ENABLED: bool = Field(default=False, description="是否启用 Redis")
@@ -177,6 +179,24 @@ class Settings(BaseSettings):
         if self.TRUST_PROXY_HEADERS and not self.trusted_proxy_ips:
             raise ValueError("启用 TRUST_PROXY_HEADERS 时必须显式配置 TRUSTED_PROXY_IPS")
 
+        return self
+
+    @model_validator(mode="after")
+    def validate_database_settings(self) -> "Settings":
+        """
+        数据库配置校验
+
+        Author  ：bixuejun(bxjgood@163.com)
+        Date    ：2026-09-24 22:09:17  # 北京时间 UTC+8
+
+        Returns:
+            Settings: 校验通过的实例
+
+        Raises:
+            ValueError: DB_CONNECTION=mysql 而 DB_CHARSET 非 utf8mb4 时
+        """
+        if self.DB_CONNECTION == "mysql" and self.DB_CHARSET != "utf8mb4":
+            raise ValueError(f"DB_CONNECTION=mysql 时 DB_CHARSET 必须为 utf8mb4（当前: {self.DB_CHARSET}）")
         return self
 
     @computed_field
@@ -317,6 +337,7 @@ class Settings(BaseSettings):
                     "user": self.DB_USERNAME,
                     "password": self.DB_PASSWORD,
                     "database": self.DB_DATABASE,
+                    "charset": self.DB_CHARSET,
                 },
             }
         elif self.DB_CONNECTION == "postgres":
@@ -328,6 +349,7 @@ class Settings(BaseSettings):
                     "user": self.DB_USERNAME,
                     "password": self.DB_PASSWORD,
                     "database": self.DB_DATABASE,
+                    "schema": self.DB_DATABASE_SCHEMA if self.DB_DATABASE_SCHEMA else "public",
                 },
             }
 
