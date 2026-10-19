@@ -122,6 +122,9 @@ class Settings(BaseSettings):
     REDIS_PASSWORD: str = Field(default="123456", description="Redis 密码")
     REDIS_PREFIX: str = Field(default="react-fastapi:", description="Redis 前缀")
 
+    # 认证用户缓存 TTL（秒；REDIS_ENABLED=true 时 is_authed 以此缓存用户信息，超时回库）
+    AUTH_USER_CACHE_TTL: int = Field(default=600, description="认证用户缓存 TTL（秒），REDIS_ENABLED 时生效")
+
     # Date and time formatting.
     DATETIME_FORMAT: str = Field(default="%Y-%m-%d %H:%M:%S", description="日期时间格式")
 

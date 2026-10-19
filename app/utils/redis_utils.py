@@ -76,6 +76,8 @@ class CustomRedisClient:
         if self._redis is None:
             try:
                 # 使用 redis.asyncio 创建连接
+                # socket 超时（秒）：不可达端口必须快速失败——无超时的连接在 Windows/IPv6
+                # 回退路径上可挂数秒，令依赖 Redis 的调用方（如认证缓存降级）被拖慢
                 self._redis = aioredis.Redis(
                     host=self.host,
                     port=self.port,
@@ -83,6 +85,8 @@ class CustomRedisClient:
                     password=self.password if self.password else None,
                     decode_responses=True,
                     encoding="utf-8",
+                    socket_connect_timeout=2,
+                    socket_timeout=2,
                 )
                 # 测试连接
                 await self._redis.ping()

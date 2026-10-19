@@ -8,6 +8,7 @@ from tortoise.expressions import F
 
 from app.core.ctx import CTX_USER_ID, CTX_USER_NAME
 from app.core.exceptions import AuthenticationError, AuthorizationError, RateLimitError
+from app.core.user_cache import load_authed_user
 from app.models import RateLimitBucket, User
 from app.repositories import api_repository, role_repository, user_repository
 from app.settings import settings
@@ -186,7 +187,8 @@ class AuthControl:
             user_id = int(payload["user_id"])
             session_version = int(payload["session_version"])
 
-            user = await user_repository.get(user_id)
+            # REDIS_ENABLED 时走缓存（载荷无口令），否则实时查库；Redis 故障自动回退
+            user = await load_authed_user(user_id)
             if not user:
                 raise AuthenticationError("用户不存在或已被删除")
             if not user.is_active:
