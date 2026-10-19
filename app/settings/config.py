@@ -1,4 +1,5 @@
 import secrets
+from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional
 
@@ -146,6 +147,23 @@ class Settings(BaseSettings):
     )
     # app-tmp 临时对象保留期（小时），超期由回收任务删除
     TMP_RETAIN_HOURS: int = Field(default=48, description="临时对象保留期（小时），超期由回收任务删除")
+
+    # ==============================================
+    # LLM 服务配置（OpenAI 兼容客户端）
+    # ==============================================
+    LLM_API_ENABLED: bool = Field(default=True, description="是否启用LLM服务")
+    LLM_API_KEY: str = Field(default="", description="LLM服务API Key")
+    LLM_API_BASE_URL: str = Field(default="https://api.deepseek.com/v1", description="LLM服务Base URL")
+    LLM_DEFAULT_MODEL: str = Field(default="deepseek-chat", description="默认LLM模型")
+    LLM_REQUEST_TIMEOUT: int = Field(default=600, description="LLM请求超时时间(秒)")
+    LLM_MAX_TOKENS: int = Field(default=4096, description="LLM 最大输出 token 数")
+    # 思考模式等私有参数各家 key 不同，按服务商分发：qwen 走顶层 enable_thinking，
+    # vllm 走 chat_template_kwargs（Qwen3 chat template 的 Jinja 变量），其余不注入
+    LLM_PROVIDER: str = Field(default="qwen", description="LLM 服务商：qwen|vllm|openai|deepseek")
+    LLM_ENABLE_THINKING: bool = Field(default=False, description="LLM 是否启用思考模式")
+    # qwen 服务商私有参数（llm_client 按 LLM_PROVIDER 分发注入；源仓库缺定义的补齐键）
+    LLM_PRESERVE_THINKING: bool = Field(default=False, description="qwen 思考内容是否随响应保留")
+    LLM_TOOL_CHOICE: str = Field(default="none", description="qwen 工具选择策略（DashScope 约定 none）")
 
     @field_validator(
         "APP_ENV",
@@ -426,6 +444,12 @@ class Settings(BaseSettings):
 
     def __repr__(self) -> str:
         return f"<Settings env={self.APP_ENV} debug={self.DEBUG} db={self.DB_CONNECTION}>"
+
+
+# 开启缓存
+@lru_cache
+def get_settings():
+    return Settings()
 
 
 # Global settings instance.
